@@ -107,7 +107,7 @@ class _MessageItemState extends State<MessageItem> {
     final isUser = widget.message.role == 'user';
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -128,8 +128,8 @@ class _MessageItemState extends State<MessageItem> {
                   widget.message.role.toUpperCase(),
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -137,17 +137,17 @@ class _MessageItemState extends State<MessageItem> {
               // Action buttons
               if (!_isEditing) ...[
                 ShadButton.ghost(
-                  child: const Icon(LucideIcons.pencil, size: 18),
+                  child: const Icon(LucideIcons.pencil, size: 16),
                   onPressed: () => setState(() => _isEditing = true),
                 ),
                 ShadButton.ghost(
-                  child: const Icon(LucideIcons.trash2, size: 18),
+                  child: const Icon(LucideIcons.trash2, size: 16),
                   onPressed: widget.onDelete,
                 ),
               ],
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
             if (_isEditing) ...[
               // Role selector
@@ -158,7 +158,7 @@ class _MessageItemState extends State<MessageItem> {
                     'Role',
                     style: theme.textTheme.small,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   ShadSelect<String>(
                     placeholder: const Text('Select role'),
                     initialValue: _selectedRole,
@@ -178,7 +178,7 @@ class _MessageItemState extends State<MessageItem> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
               // Thinking editor (only for assistant messages)
               if (_selectedRole == 'assistant') ...[
@@ -189,7 +189,7 @@ class _MessageItemState extends State<MessageItem> {
                       'Thinking (optional)',
                       style: theme.textTheme.small,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     ShadInput(
                       controller: _thinkingController,
                       placeholder: const Text('Optional thinking/reasoning trace...'),
@@ -198,7 +198,7 @@ class _MessageItemState extends State<MessageItem> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
               ],
 
               // Content editor
@@ -209,38 +209,39 @@ class _MessageItemState extends State<MessageItem> {
                     'Content',
                     style: theme.textTheme.small,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   ShadInput(
                     controller: _contentController,
-                    minLines: 3,
+                    minLines: 2,
                     maxLines: null,
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
               // AI Suggestion button (only for assistant messages)
               if (_selectedRole == 'assistant') ...[
                 ShadButton(
                   onPressed: _isLoadingSuggestion ? null : _getSuggestion,
                   enabled: !_isLoadingSuggestion,
+                  size: ShadButtonSize.sm,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (_isLoadingSuggestion)
                         const SizedBox(
-                          width: 20,
-                          height: 20,
+                          width: 16,
+                          height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       else
-                        const Icon(LucideIcons.lightbulb, size: 20),
-                      const SizedBox(width: 8),
+                        const Icon(LucideIcons.lightbulb, size: 16),
+                      const SizedBox(width: 6),
                       Text(_isLoadingSuggestion ? 'Getting suggestion...' : 'Get AI Suggestion'),
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
               ],
 
               // Error message
@@ -249,7 +250,7 @@ class _MessageItemState extends State<MessageItem> {
                   title: const Text('Error'),
                   description: Text(_errorMessage!),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
               ],
 
               // Save/Cancel buttons
@@ -258,11 +259,13 @@ class _MessageItemState extends State<MessageItem> {
                 children: [
                   ShadButton.outline(
                     onPressed: _cancelEdit,
+                    size: ShadButtonSize.sm,
                     child: const Text('Cancel'),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   ShadButton(
                     onPressed: _saveChanges,
+                    size: ShadButtonSize.sm,
                     child: const Text('Save'),
                   ),
                 ],
@@ -277,14 +280,14 @@ class _MessageItemState extends State<MessageItem> {
                     children: [
                       Icon(
                         _isThinkingExpanded ? LucideIcons.chevronDown : LucideIcons.chevronRight,
-                        size: 16,
+                        size: 14,
                         color: theme.colorScheme.mutedForeground,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _isThinkingExpanded ? 'Hide thinking' : 'Show thinking',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: theme.colorScheme.mutedForeground,
                         ),
                       ),
@@ -292,27 +295,29 @@ class _MessageItemState extends State<MessageItem> {
                   ),
                 ),
                 if (_isThinkingExpanded) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.only(left: 8, top: 6, bottom: 6),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.muted,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: theme.colorScheme.border,
+                      border: Border(
+                        left: BorderSide(
+                          color: theme.colorScheme.mutedForeground.withOpacity(0.3),
+                          width: 2,
+                        ),
                       ),
                     ),
                     child: SelectableText(
                       widget.message.thinking!,
                       style: TextStyle(
+                        fontSize: 13,
                         fontStyle: FontStyle.italic,
                         color: theme.colorScheme.mutedForeground,
                       ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
               ],
               SelectableText(
                 widget.message.content,

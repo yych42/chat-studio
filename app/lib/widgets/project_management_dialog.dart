@@ -151,25 +151,29 @@ class _ProjectManagementDialogState extends State<ProjectManagementDialog> {
     return ShadDialog(
       title: const Text('Manage Projects'),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+        constraints: const BoxConstraints(maxWidth: 420, maxHeight: 500),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Create new project section
             if (_isCreating) ...[
-              ShadCard(
-                padding: const EdgeInsets.all(12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: theme.colorScheme.border),
+                  borderRadius: BorderRadius.circular(4),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text('New Project', style: theme.textTheme.small),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     ShadInput(
                       controller: _nameController,
                       placeholder: const Text('Project name'),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -178,11 +182,13 @@ class _ProjectManagementDialogState extends State<ProjectManagementDialog> {
                             _nameController.clear();
                             setState(() => _isCreating = false);
                           },
+                          size: ShadButtonSize.sm,
                           child: const Text('Cancel'),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         ShadButton(
                           onPressed: _createProject,
+                          size: ShadButtonSize.sm,
                           child: const Text('Create'),
                         ),
                       ],
@@ -190,20 +196,21 @@ class _ProjectManagementDialogState extends State<ProjectManagementDialog> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
             ] else ...[
               ShadButton(
                 onPressed: () => setState(() => _isCreating = true),
+                size: ShadButtonSize.sm,
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(LucideIcons.plus, size: 16),
-                    SizedBox(width: 8),
+                    Icon(LucideIcons.plus, size: 14),
+                    SizedBox(width: 6),
                     Text('New Project'),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
             ],
 
             // Projects list
@@ -214,18 +221,22 @@ class _ProjectManagementDialogState extends State<ProjectManagementDialog> {
                   children: [
                     for (final project in widget.projects)
                       if (_editingProject?.id == project.id) ...[
-                        ShadCard(
-                          padding: const EdgeInsets.all(12),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: theme.colorScheme.border),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text('Edit Project', style: theme.textTheme.small),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               ShadInput(
                                 controller: _nameController,
                                 placeholder: const Text('Project name'),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
@@ -234,11 +245,13 @@ class _ProjectManagementDialogState extends State<ProjectManagementDialog> {
                                       _nameController.clear();
                                       setState(() => _editingProject = null);
                                     },
+                                    size: ShadButtonSize.sm,
                                     child: const Text('Cancel'),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 6),
                                   ShadButton(
                                     onPressed: _updateProject,
+                                    size: ShadButtonSize.sm,
                                     child: const Text('Save'),
                                   ),
                                 ],
@@ -246,21 +259,24 @@ class _ProjectManagementDialogState extends State<ProjectManagementDialog> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                       ] else ...[
                         Container(
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          margin: const EdgeInsets.only(bottom: 6),
                           decoration: BoxDecoration(
                             border: Border.all(color: theme.colorScheme.border),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(4),
                           ),
                           child: Row(
                             children: [
-                              const Icon(LucideIcons.folder, size: 16),
-                              const SizedBox(width: 12),
+                              const Icon(LucideIcons.folder, size: 14),
+                              const SizedBox(width: 8),
                               Expanded(
-                                child: Text(project.name),
+                                child: Text(
+                                  project.name,
+                                  style: theme.textTheme.small,
+                                ),
                               ),
                               if (project.id != 'default') ...[
                                 ShadButton.ghost(
@@ -268,12 +284,11 @@ class _ProjectManagementDialogState extends State<ProjectManagementDialog> {
                                     _nameController.text = project.name;
                                     setState(() => _editingProject = project);
                                   },
-                                  child: const Icon(LucideIcons.pencil, size: 16),
+                                  child: const Icon(LucideIcons.pencil, size: 14),
                                 ),
-                                const SizedBox(width: 4),
                                 ShadButton.ghost(
                                   onPressed: () => _deleteProject(project),
-                                  child: const Icon(LucideIcons.trash2, size: 16),
+                                  child: const Icon(LucideIcons.trash2, size: 14),
                                 ),
                               ],
                             ],

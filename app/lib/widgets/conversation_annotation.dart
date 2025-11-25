@@ -95,83 +95,84 @@ class _ConversationAnnotationState extends State<ConversationAnnotation> {
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
 
-    return ShadCard(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Conversation Status',
-            style: theme.textTheme.large,
-          ),
-          const SizedBox(height: 16),
-
-          // Status buttons
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _StatusButton(
-                label: _getStatusLabel('completed'),
-                icon: _getStatusIcon('completed'),
-                color: _getStatusColor('completed'),
-                isSelected: widget.state.status == 'completed',
-                onPressed: () => _updateStatus('completed'),
-              ),
-              _StatusButton(
-                label: _getStatusLabel('need_review'),
-                icon: _getStatusIcon('need_review'),
-                color: _getStatusColor('need_review'),
-                isSelected: widget.state.status == 'need_review',
-                onPressed: () => _updateStatus('need_review'),
-              ),
-              _StatusButton(
-                label: _getStatusLabel('incomplete'),
-                icon: _getStatusIcon('incomplete'),
-                color: _getStatusColor('incomplete'),
-                isSelected: widget.state.status == 'incomplete',
-                onPressed: () => _updateStatus('incomplete'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Comments/Notes section
-          Column(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                'Status',
+                style: theme.textTheme.small,
+              ),
+              const SizedBox(height: 8),
+
+              // Status buttons
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _StatusButton(
+                    label: _getStatusLabel('completed'),
+                    icon: _getStatusIcon('completed'),
+                    color: _getStatusColor('completed'),
+                    isSelected: widget.state.status == 'completed',
+                    onPressed: () => _updateStatus('completed'),
+                  ),
+                  _StatusButton(
+                    label: _getStatusLabel('need_review'),
+                    icon: _getStatusIcon('need_review'),
+                    color: _getStatusColor('need_review'),
+                    isSelected: widget.state.status == 'need_review',
+                    onPressed: () => _updateStatus('need_review'),
+                  ),
+                  _StatusButton(
+                    label: _getStatusLabel('incomplete'),
+                    icon: _getStatusIcon('incomplete'),
+                    color: _getStatusColor('incomplete'),
+                    isSelected: widget.state.status == 'incomplete',
+                    onPressed: () => _updateStatus('incomplete'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Comments/Notes section
               Text(
                 'Notes',
                 style: theme.textTheme.small,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               ShadInput(
                 controller: _commentController,
                 placeholder: const Text('Add notes or comments...'),
-                minLines: 3,
-                maxLines: 3,
+                minLines: 2,
+                maxLines: 2,
                 trailing: _isDirty
                     ? IconButton(
-                        icon: const Icon(LucideIcons.save, size: 20),
+                        icon: const Icon(LucideIcons.save, size: 18),
                         onPressed: _saveComment,
                       )
                     : null,
               ),
+              if (_isDirty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Unsaved changes',
+                  style: theme.textTheme.small?.copyWith(
+                    color: Colors.orange,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ],
           ),
-          if (_isDirty) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Unsaved changes',
-              style: theme.textTheme.small?.copyWith(
-                color: Colors.orange,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ],
-      ),
+        ),
+        Divider(height: 1, thickness: 1, color: theme.colorScheme.border),
+      ],
     );
   }
 }
@@ -198,11 +199,12 @@ class _StatusButton extends StatelessWidget {
         onPressed: onPressed,
         backgroundColor: color,
         foregroundColor: Colors.white,
+        size: ShadButtonSize.sm,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20),
-            const SizedBox(width: 8),
+            Icon(icon, size: 14),
+            const SizedBox(width: 4),
             Text(label),
           ],
         ),
@@ -210,11 +212,12 @@ class _StatusButton extends StatelessWidget {
     } else {
       return ShadButton.outline(
         onPressed: onPressed,
+        size: ShadButtonSize.sm,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20),
-            const SizedBox(width: 8),
+            Icon(icon, size: 14),
+            const SizedBox(width: 4),
             Text(label),
           ],
         ),

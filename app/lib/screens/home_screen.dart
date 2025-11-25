@@ -57,6 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // Display settings
   bool _expandThinkingByDefault = false;
 
+  // Left panel width (resizable)
+  double? _leftPanelWidth;
+
   @override
   void initState() {
     super.initState();
@@ -478,22 +481,23 @@ class _HomeScreenState extends State<HomeScreen> {
     final targetProjectId = await showShadDialog<String>(
       context: context,
       builder: (context) => ShadDialog(
-        title: Text('Move ${conversationsToMove.length} conversation(s) to project'),
+        title: Text('Move ${conversationsToMove.length} conversation(s)'),
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
+          constraints: const BoxConstraints(maxWidth: 320),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (final project in _projects)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: ShadButton(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: ShadButton.outline(
                     onPressed: () => Navigator.pop(context, project.id),
+                    size: ShadButtonSize.sm,
                     child: Row(
                       children: [
-                        const Icon(LucideIcons.folder, size: 16),
-                        const SizedBox(width: 12),
+                        const Icon(LucideIcons.folder, size: 14),
+                        const SizedBox(width: 8),
                         Text(project.name),
                       ],
                     ),
@@ -592,7 +596,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
               child: Container(
-                padding: const EdgeInsets.only(left: 12, right: 12, top: 30, bottom: 12),
+                padding: const EdgeInsets.only(left: 12, right: 12, top: 28, bottom: 8),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.background,
                   border: Border(
@@ -606,9 +610,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       'Chat Studio',
-                      style: theme.textTheme.h4,
+                      style: theme.textTheme.large,
                     ),
-                    const SizedBox(width: 24),
+                    const SizedBox(width: 16),
                 // Project selector
                 ShadPopover(
                   controller: _projectPopoverController,
@@ -813,64 +817,89 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : Row(
-                    children: [
-                      // Left panel - Conversation list (1/3 width)
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width / 3,
-                        child: ConversationList(
-                          conversations: _conversations,
-                          selectedConversationId: _selectedConversationId,
-                          selectedConversationIds: _selectedConversationIds,
-                          onSelectConversation: (id) {
-                            setState(() => _selectedConversationId = id);
-                          },
-                          onSelectionChanged: (ids) {
-                            setState(() => _selectedConversationIds = ids);
-                          },
-                          onDeleteConversation: _deleteConversation,
-                          onNewConversation: _createNewConversation,
-                          statusFilter: _statusFilter,
-                          onFilterChange: (filter) {
-                            setState(() => _statusFilter = filter);
-                            _loadConversations();
-                          },
-                          sortBy: _sortBy,
-                          sortAscending: _sortAscending,
-                          onSortByChange: (sortBy) {
-                            setState(() => _sortBy = sortBy);
-                            _loadConversations();
-                          },
-                          onSortOrderChange: (ascending) {
-                            setState(() => _sortAscending = ascending);
-                            _loadConversations();
-                          },
-                        ),
-                      ),
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final defaultWidth = constraints.maxWidth / 3;
+                      final minWidth = defaultWidth * 0.67; // ~2/3 of default
+                      final maxWidth = constraints.maxWidth * 0.5; // Max 50% of screen
+                      final currentWidth = (_leftPanelWidth ?? defaultWidth).clamp(minWidth, maxWidth);
 
-                      // Vertical divider
-                      Container(
-                        width: 1,
-                        color: theme.colorScheme.border,
-                      ),
+                      return Row(
+                        children: [
+                          // Left panel - Conversation list (resizable)
+                          SizedBox(
+                            width: currentWidth,
+                            child: ConversationList(
+                              conversations: _conversations,
+                              selectedConversationId: _selectedConversationId,
+                              selectedConversationIds: _selectedConversationIds,
+                              onSelectConversation: (id) {
+                                setState(() => _selectedConversationId = id);
+                              },
+                              onSelectionChanged: (ids) {
+                                setState(() => _selectedConversationIds = ids);
+                              },
+                              onDeleteConversation: _deleteConversation,
+                              onNewConversation: _createNewConversation,
+                              statusFilter: _statusFilter,
+                              onFilterChange: (filter) {
+                                setState(() => _statusFilter = filter);
+                                _loadConversations();
+                              },
+                              sortBy: _sortBy,
+                              sortAscending: _sortAscending,
+                              onSortByChange: (sortBy) {
+                                setState(() => _sortBy = sortBy);
+                                _loadConversations();
+                              },
+                              onSortOrderChange: (ascending) {
+                                setState(() => _sortAscending = ascending);
+                                _loadConversations();
+                              },
+                            ),
+                          ),
 
-                      // Right panel - Conversation editor (2/3 width)
-                      Expanded(
-                        flex: 2,
-                        child: ConversationEditor(
-                          key: ValueKey(_selectedConversationId),
-                          conversation: _selectedConversation,
-                          onConversationUpdated: _loadConversations,
-                          onDuplicate: (newId) {
-                            _loadConversations().then((_) {
-                              setState(() => _selectedConversationId = newId);
-                            });
-                          },
-                          onNewConversation: _createNewConversation,
-                          expandThinkingByDefault: _expandThinkingByDefault,
-                        ),
-                      ),
-                    ],
+                          // Draggable divider
+                          MouseRegion(
+                            cursor: SystemMouseCursors.resizeColumn,
+                            child: GestureDetector(
+                              onHorizontalDragUpdate: (details) {
+                                setState(() {
+                                  final newWidth = (currentWidth + details.delta.dx).clamp(minWidth, maxWidth);
+                                  _leftPanelWidth = newWidth;
+                                });
+                              },
+                              child: Container(
+                                width: 4,
+                                color: Colors.transparent,
+                                child: Center(
+                                  child: Container(
+                                    width: 1,
+                                    color: theme.colorScheme.border,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Right panel - Conversation editor
+                          Expanded(
+                            child: ConversationEditor(
+                              key: ValueKey(_selectedConversationId),
+                              conversation: _selectedConversation,
+                              onConversationUpdated: _loadConversations,
+                              onDuplicate: (newId) {
+                                _loadConversations().then((_) {
+                                  setState(() => _selectedConversationId = newId);
+                                });
+                              },
+                              onNewConversation: _createNewConversation,
+                              expandThinkingByDefault: _expandThinkingByDefault,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
           ),
         ],

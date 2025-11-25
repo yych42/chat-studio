@@ -134,28 +134,28 @@ class _ConversationEditorState extends State<ConversationEditor> {
       return Align(
         alignment: const Alignment(-0.3, 0),
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 280),
-          padding: const EdgeInsets.all(32),
+          constraints: const BoxConstraints(maxWidth: 240),
+          padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
                 LucideIcons.mousePointerClick,
-                size: 32,
+                size: 24,
                 color: theme.colorScheme.mutedForeground,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               Text(
                 'Select a conversation',
-                style: theme.textTheme.large.copyWith(
-                  fontWeight: FontWeight.w600,
+                style: theme.textTheme.small.copyWith(
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
-                'Choose from the list on the left, or create a new one with the button above.',
-                style: theme.textTheme.muted,
+                'Choose from the list on the left, or create a new one.',
+                style: theme.textTheme.muted.copyWith(fontSize: 12),
               ),
             ],
           ),
@@ -167,7 +167,7 @@ class _ConversationEditorState extends State<ConversationEditor> {
       children: [
         // Header
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: theme.colorScheme.background,
             border: Border(
@@ -178,24 +178,18 @@ class _ConversationEditorState extends State<ConversationEditor> {
           ),
           child: Row(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Edit Conversation',
-                      style: theme.textTheme.large,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${_currentConversation!.messages.length} messages',
-                      style: theme.textTheme.small,
-                    ),
-                  ],
-                ),
+              Text(
+                'Edit Conversation',
+                style: theme.textTheme.small.copyWith(fontWeight: FontWeight.w500),
               ),
+              const SizedBox(width: 8),
+              Text(
+                '${_currentConversation!.messages.length} messages',
+                style: theme.textTheme.muted.copyWith(fontSize: 12),
+              ),
+              const Spacer(),
               ShadButton.ghost(
-                child: const Icon(LucideIcons.copy, size: 20),
+                child: const Icon(LucideIcons.copy, size: 16),
                 onPressed: _handleDuplicate,
               ),
             ],
@@ -205,73 +199,61 @@ class _ConversationEditorState extends State<ConversationEditor> {
         // Content
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: EdgeInsets.zero,
             children: [
               // Conversation annotation
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: ConversationAnnotation(
-                  state: _currentConversation!.state,
-                  onUpdate: _handleUpdateState,
-                ),
+              ConversationAnnotation(
+                state: _currentConversation!.state,
+                onUpdate: _handleUpdateState,
               ),
 
               // Messages
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: ShadCard(
-                  padding: EdgeInsets.zero,
-                  child: _currentConversation!.messages.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Center(
-                            child: Text(
-                              'No messages yet. Add a message to get started.',
-                              style: TextStyle(color: theme.colorScheme.mutedForeground),
-                            ),
-                          ),
-                        )
-                      : Column(
-                          children: List.generate(
-                            _currentConversation!.messages.length,
-                            (index) {
-                              final message = _currentConversation!.messages[index];
-                              return MessageItem(
-                                key: ValueKey('${_currentConversation!.id}-$index'),
-                                message: message,
-                                index: index,
-                                conversation: _currentConversation!,
-                                onUpdate: (updatedMessage) => _handleUpdateMessage(index, updatedMessage),
-                                onDelete: () => _handleDeleteMessage(index),
-                                expandThinkingByDefault: widget.expandThinkingByDefault,
-                              );
-                            },
-                          ),
+              _currentConversation!.messages.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      child: Center(
+                        child: Text(
+                          'No messages yet. Add a message to get started.',
+                          style: TextStyle(color: theme.colorScheme.mutedForeground),
                         ),
-                ),
-              ),
-              const SizedBox(height: 12),
+                      ),
+                    )
+                  : Column(
+                      children: List.generate(
+                        _currentConversation!.messages.length,
+                        (index) {
+                          final message = _currentConversation!.messages[index];
+                          return MessageItem(
+                            key: ValueKey('${_currentConversation!.id}-$index'),
+                            message: message,
+                            index: index,
+                            conversation: _currentConversation!,
+                            onUpdate: (updatedMessage) => _handleUpdateMessage(index, updatedMessage),
+                            onDelete: () => _handleDeleteMessage(index),
+                            expandThinkingByDefault: widget.expandThinkingByDefault,
+                          );
+                        },
+                      ),
+                    ),
 
               // Add message form
               if (_showAddForm)
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: AddMessageForm(
-                    conversationHistory: _currentConversation!.messages,
-                    onAdd: _handleAddMessage,
-                    onCancel: () => setState(() => _showAddForm = false),
-                  ),
+                AddMessageForm(
+                  conversationHistory: _currentConversation!.messages,
+                  onAdd: _handleAddMessage,
+                  onCancel: () => setState(() => _showAddForm = false),
                 )
               else
                 Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: ShadButton(
                     onPressed: () => setState(() => _showAddForm = true),
+                    size: ShadButtonSize.sm,
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.plus, size: 20),
-                        SizedBox(width: 8),
+                        Icon(LucideIcons.plus, size: 16),
+                        SizedBox(width: 6),
                         Text('Add Message'),
                       ],
                     ),

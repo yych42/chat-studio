@@ -87,7 +87,7 @@ class _ConversationListState extends State<ConversationList> {
       children: [
         // Header with controls
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: theme.colorScheme.background,
             border: Border(bottom: BorderSide(color: theme.colorScheme.border)),
@@ -98,16 +98,17 @@ class _ConversationListState extends State<ConversationList> {
               // New conversation button
               ShadButton(
                 onPressed: widget.onNewConversation,
+                size: ShadButtonSize.sm,
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(LucideIcons.plus, size: 20),
-                    SizedBox(width: 8),
+                    Icon(LucideIcons.plus, size: 16),
+                    SizedBox(width: 6),
                     Text('New Conversation'),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
 
               // Filter and sort row
               Row(
@@ -237,21 +238,21 @@ class _ConversationListState extends State<ConversationList> {
                       children: [
                         Icon(
                           LucideIcons.messageSquare,
-                          size: 64,
+                          size: 32,
                           color: theme.colorScheme.mutedForeground,
                         ),
-                        const SizedBox(height: 16),
-                        Text('No conversations', style: theme.textTheme.large),
                         const SizedBox(height: 8),
+                        Text('No conversations', style: theme.textTheme.small),
+                        const SizedBox(height: 4),
                         Text(
                           'Create a new conversation to get started',
-                          style: theme.textTheme.small,
+                          style: theme.textTheme.muted.copyWith(fontSize: 12),
                         ),
                       ],
                     ),
                   )
                   : ListView.separated(
-                    padding: const EdgeInsets.only(top: 8, bottom: 16),
+                    padding: const EdgeInsets.only(top: 4, bottom: 12),
                     itemCount: widget.conversations.length,
                     separatorBuilder: (context, index) => Divider(
                       height: 1,
@@ -378,8 +379,8 @@ class _ConversationCardState extends State<_ConversationCard> {
                       ? widget.theme.colorScheme.muted.withOpacity(0.5)
                       : Colors.transparent,
           padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
+            horizontal: 12,
+            vertical: 8,
           ),
             child: Row(
               children: [
@@ -392,38 +393,38 @@ class _ConversationCardState extends State<_ConversationCard> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: widget.theme.textTheme.p.copyWith(
-                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
                           height: 1.3,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           Icon(
                             widget.getStatusIcon(widget.conversation.state.status),
                             color: widget.getStatusColor(widget.conversation.state.status),
-                            size: 14,
+                            size: 12,
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 4),
                           Text(
                             '${widget.conversation.messages.length} msgs',
                             style: widget.theme.textTheme.muted.copyWith(
-                              fontSize: 12,
+                              fontSize: 11,
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Text(
                               '·',
                               style: widget.theme.textTheme.muted.copyWith(
-                                fontSize: 12,
+                                fontSize: 11,
                               ),
                             ),
                           ),
                           Text(
                             DateFormat('MMM d, HH:mm').format(widget.conversation.updatedAt),
                             style: widget.theme.textTheme.muted.copyWith(
-                              fontSize: 12,
+                              fontSize: 11,
                             ),
                           ),
                         ],
@@ -437,7 +438,7 @@ class _ConversationCardState extends State<_ConversationCard> {
                   child: ShadButton.ghost(
                     child: const Icon(
                       LucideIcons.trash2,
-                      size: 20,
+                      size: 16,
                     ),
                     onPressed: widget.onDelete,
                   ),
