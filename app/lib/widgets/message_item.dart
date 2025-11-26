@@ -121,33 +121,31 @@ class _MessageItemState extends State<MessageItem> {
         children: [
           Row(
             children: [
-              // Role indicator
-              ShadBadge(
-                backgroundColor: isUser ? Colors.blue : Colors.green,
-                child: Text(
-                  widget.message.role.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                  ),
+              // Role indicator - simple text
+              Text(
+                widget.message.role.toUpperCase(),
+                style: TextStyle(
+                  color: theme.colorScheme.mutedForeground,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
                 ),
               ),
               const Spacer(),
               // Action buttons
               if (!_isEditing) ...[
                 ShadButton.ghost(
-                  child: const Icon(LucideIcons.pencil, size: 16),
+                  child: Icon(LucideIcons.pencil, size: 14, color: theme.colorScheme.mutedForeground),
                   onPressed: () => setState(() => _isEditing = true),
                 ),
                 ShadButton.ghost(
-                  child: const Icon(LucideIcons.trash2, size: 16),
+                  child: Icon(LucideIcons.trash2, size: 14, color: theme.colorScheme.mutedForeground),
                   onPressed: widget.onDelete,
                 ),
               ],
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
 
             if (_isEditing) ...[
               // Role selector
