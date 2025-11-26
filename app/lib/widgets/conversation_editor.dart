@@ -305,11 +305,13 @@ class _ConversationEditorState extends State<ConversationEditor> {
           child: Center(
             child: Container(
               padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: theme.colorScheme.background,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: theme.colorScheme.border),
-                boxShadow: [
+                shape: RoundedSuperellipseBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(color: theme.colorScheme.border),
+                ),
+                shadows: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.08),
                     blurRadius: 16,
@@ -547,9 +549,11 @@ class _ToolbarButtonState extends State<_ToolbarButton> {
         onExit: (_) => setState(() => _isHovered = false),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: _isHovered ? hoverColor : hoverColor.withOpacity(0),
-            borderRadius: BorderRadius.circular(13),
+            shape: RoundedSuperellipseBorder(
+              borderRadius: BorderRadius.circular(13),
+            ),
           ),
           child: widget.child,
         ),
