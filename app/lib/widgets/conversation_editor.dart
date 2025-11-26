@@ -304,10 +304,10 @@ class _ConversationEditorState extends State<ConversationEditor> {
           right: 0,
           child: Center(
             child: Container(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: theme.colorScheme.background,
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: theme.colorScheme.border),
                 boxShadow: [
                   BoxShadow(
@@ -358,12 +358,32 @@ class _ConversationEditorState extends State<ConversationEditor> {
                         ],
                       ),
                     ),
-                    child: _ExpandingToolbarButton(
+                    child: _ToolbarButton(
                       onPressed: () => _statusPopoverController.toggle(),
-                      icon: _getStatusIcon(currentStatus),
-                      label: _getStatusLabel(currentStatus),
-                      color: _getStatusColor(currentStatus),
-                      showChevron: true,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _getStatusIcon(currentStatus),
+                            size: 14,
+                            color: _getStatusColor(currentStatus),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            _getStatusLabel(currentStatus),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _getStatusColor(currentStatus),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(
+                            LucideIcons.chevronDown,
+                            size: 12,
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -406,20 +426,50 @@ class _ConversationEditorState extends State<ConversationEditor> {
                         ],
                       ),
                     ),
-                    child: _ExpandingToolbarButton(
+                    child: _ToolbarButton(
                       onPressed: () => _notesPopoverController.toggle(),
-                      icon: hasNotes ? LucideIcons.stickyNote : LucideIcons.fileText,
-                      label: 'Notes',
-                      color: hasNotes ? theme.colorScheme.foreground : theme.colorScheme.mutedForeground,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            hasNotes ? LucideIcons.stickyNote : LucideIcons.fileText,
+                            size: 14,
+                            color: hasNotes ? theme.colorScheme.foreground : theme.colorScheme.mutedForeground,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            'Notes',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: hasNotes ? theme.colorScheme.foreground : theme.colorScheme.mutedForeground,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
                   // Duplicate button
-                  _ExpandingToolbarButton(
+                  _ToolbarButton(
                     onPressed: _handleDuplicate,
-                    icon: LucideIcons.copy,
-                    label: 'Duplicate',
-                    color: theme.colorScheme.mutedForeground,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          LucideIcons.copy,
+                          size: 14,
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Duplicate',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -468,126 +518,40 @@ class _StatusOption extends StatelessWidget {
   }
 }
 
-class _ExpandingToolbarButton extends StatefulWidget {
+class _ToolbarButton extends StatefulWidget {
   final VoidCallback onPressed;
-  final IconData icon;
-  final String label;
-  final Color color;
-  final bool showChevron;
+  final Widget child;
 
-  const _ExpandingToolbarButton({
+  const _ToolbarButton({
     required this.onPressed,
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.showChevron = false,
+    required this.child,
   });
 
   @override
-  State<_ExpandingToolbarButton> createState() => _ExpandingToolbarButtonState();
+  State<_ToolbarButton> createState() => _ToolbarButtonState();
 }
 
-class _ExpandingToolbarButtonState extends State<_ExpandingToolbarButton>
-    with SingleTickerProviderStateMixin {
+class _ToolbarButtonState extends State<_ToolbarButton> {
   bool _isHovered = false;
-  late AnimationController _controller;
-  late Animation<double> _expandAnimation;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _expandAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onEnter() {
-    setState(() => _isHovered = true);
-    _controller.forward();
-  }
-
-  void _onExit() {
-    setState(() => _isHovered = false);
-    _controller.reverse();
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
+    final hoverColor = theme.colorScheme.muted;
 
-    return MouseRegion(
-      onEnter: (_) => _onEnter(),
-      onExit: (_) => _onExit(),
-      child: GestureDetector(
-        onTap: widget.onPressed,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-          padding: EdgeInsets.symmetric(
-            horizontal: _isHovered ? 12 : 10,
-            vertical: 8,
-          ),
+    return GestureDetector(
+      onTap: widget.onPressed,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: _isHovered
-                ? theme.colorScheme.muted.withOpacity(0.6)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
+            color: _isHovered ? hoverColor : hoverColor.withOpacity(0),
+            borderRadius: BorderRadius.circular(13),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                widget.icon,
-                size: 16,
-                color: widget.color,
-              ),
-              SizeTransition(
-                sizeFactor: _expandAnimation,
-                axis: Axis.horizontal,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(width: 6),
-                      Text(
-                        widget.label,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: widget.color,
-                        ),
-                      ),
-                      if (widget.showChevron) ...[
-                        const SizedBox(width: 2),
-                        Icon(
-                          LucideIcons.chevronDown,
-                          size: 12,
-                          color: theme.colorScheme.mutedForeground,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+          child: widget.child,
         ),
       ),
     );
