@@ -36,9 +36,9 @@ jobs:
 
       - name: Create DMG
         run: |
-          APP_NAME="app"
+          APP_NAME="Chat Studio"
           APP_PATH="build/macos/Build/Products/Release/${APP_NAME}.app"
-          DMG_NAME="${APP_NAME}-macos"
+          DMG_NAME="ChatStudio-macos"
 
           # Determine version
           if [ -n "${{ github.event.inputs.version }}" ]; then
