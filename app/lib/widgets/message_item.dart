@@ -27,28 +27,82 @@ class MessageItem extends StatefulWidget {
 }
 
 class _MessageItemState extends State<MessageItem> {
-  bool _isEditing = false;
   late TextEditingController _contentController;
   late TextEditingController _thinkingController;
-  late String _selectedRole;
+  late FocusNode _contentFocusNode;
+  late FocusNode _thinkingFocusNode;
   bool _isLoadingSuggestion = false;
   String? _errorMessage;
-  late bool _isThinkingExpanded;
 
   @override
   void initState() {
     super.initState();
     _contentController = TextEditingController(text: widget.message.content);
     _thinkingController = TextEditingController(text: widget.message.thinking ?? '');
-    _selectedRole = widget.message.role;
-    _isThinkingExpanded = widget.expandThinkingByDefault;
+    _contentFocusNode = FocusNode();
+    _thinkingFocusNode = FocusNode();
+
+    // Save on focus lost
+    _contentFocusNode.addListener(_onContentFocusChange);
+    _thinkingFocusNode.addListener(_onThinkingFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(MessageItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update controllers if message changed externally
+    if (widget.message.content != oldWidget.message.content &&
+        widget.message.content != _contentController.text) {
+      _contentController.text = widget.message.content;
+    }
+    if (widget.message.thinking != oldWidget.message.thinking &&
+        widget.message.thinking != _thinkingController.text) {
+      _thinkingController.text = widget.message.thinking ?? '';
+    }
   }
 
   @override
   void dispose() {
+    _contentFocusNode.removeListener(_onContentFocusChange);
+    _thinkingFocusNode.removeListener(_onThinkingFocusChange);
     _contentController.dispose();
     _thinkingController.dispose();
+    _contentFocusNode.dispose();
+    _thinkingFocusNode.dispose();
     super.dispose();
+  }
+
+  void _onContentFocusChange() {
+    if (!_contentFocusNode.hasFocus) {
+      _saveIfChanged();
+    }
+  }
+
+  void _onThinkingFocusChange() {
+    if (!_thinkingFocusNode.hasFocus) {
+      _saveIfChanged();
+    }
+  }
+
+  void _saveIfChanged() {
+    final newContent = _contentController.text;
+    final newThinking = _thinkingController.text.trim();
+    final oldThinking = widget.message.thinking ?? '';
+
+    if (newContent != widget.message.content || newThinking != oldThinking) {
+      final updatedMessage = Message(
+        role: widget.message.role,
+        content: newContent,
+        thinking: newThinking.isEmpty ? null : newThinking,
+      );
+      widget.onUpdate(updatedMessage);
+    }
+  }
+
+  void _toggleRole() {
+    final newRole = widget.message.role == 'user' ? 'assistant' : 'user';
+    final updatedMessage = widget.message.copyWith(role: newRole);
+    widget.onUpdate(updatedMessage);
   }
 
   Future<void> _getSuggestion() async {
@@ -58,7 +112,6 @@ class _MessageItemState extends State<MessageItem> {
     });
 
     try {
-      // Get all messages up to this point
       final conversationHistory = widget.conversation.messages
           .take(widget.index)
           .toList();
@@ -69,6 +122,7 @@ class _MessageItemState extends State<MessageItem> {
         _contentController.text = suggestion;
         _isLoadingSuggestion = false;
       });
+      _saveIfChanged();
     } catch (e) {
       setState(() {
         _isLoadingSuggestion = false;
@@ -77,34 +131,18 @@ class _MessageItemState extends State<MessageItem> {
     }
   }
 
-  void _saveChanges() {
-    final thinkingText = _thinkingController.text.trim();
-    final updatedMessage = Message(
-      role: _selectedRole,
-      content: _contentController.text,
-      thinking: thinkingText.isEmpty ? null : thinkingText,
-    );
-    widget.onUpdate(updatedMessage);
-    setState(() {
-      _isEditing = false;
-      _errorMessage = null;
-    });
-  }
-
-  void _cancelEdit() {
-    setState(() {
-      _contentController.text = widget.message.content;
-      _thinkingController.text = widget.message.thinking ?? '';
-      _selectedRole = widget.message.role;
-      _isEditing = false;
-      _errorMessage = null;
-    });
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    // Enter without Shift inserts a newline (default behavior)
+    // Shift+Enter also inserts a newline
+    // We don't need special handling - just let TextField handle it
+    return KeyEventResult.ignored;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
-    final isUser = widget.message.role == 'user';
+    final isAssistant = widget.message.role == 'assistant';
+    final hasThinking = widget.message.thinking != null && widget.message.thinking!.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -119,208 +157,186 @@ class _MessageItemState extends State<MessageItem> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Role indicator - clickable to toggle role
           Row(
             children: [
-              // Role indicator - simple text
-              Text(
-                widget.message.role.toUpperCase(),
-                style: TextStyle(
-                  color: theme.colorScheme.mutedForeground,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.5,
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: _toggleRole,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      color: theme.colorScheme.muted.withValues(alpha: 0.5),
+                    ),
+                    child: Text(
+                      widget.message.role.toUpperCase(),
+                      style: TextStyle(
+                        color: theme.colorScheme.mutedForeground,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const Spacer(),
-              // Action buttons
-              if (!_isEditing) ...[
-                ShadButton.ghost(
-                  child: Icon(LucideIcons.pencil, size: 14, color: theme.colorScheme.mutedForeground),
-                  onPressed: () => setState(() => _isEditing = true),
-                ),
-                ShadButton.ghost(
-                  child: Icon(LucideIcons.trash2, size: 14, color: theme.colorScheme.mutedForeground),
-                  onPressed: widget.onDelete,
-                ),
-              ],
+              // Delete button
+              ShadButton.ghost(
+                onPressed: widget.onDelete,
+                child: Icon(LucideIcons.trash2, size: 14, color: theme.colorScheme.mutedForeground),
+              ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
 
-            if (_isEditing) ...[
-              // Role selector
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Role',
-                    style: theme.textTheme.small,
+          // Thinking section (for assistant messages)
+          if (isAssistant) ...[
+            if (hasThinking) ...[
+              // Display thinking in blockquote style
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.only(left: 10, top: 6, bottom: 6),
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      color: theme.colorScheme.mutedForeground.withValues(alpha: 0.3),
+                      width: 2,
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  ShadSelect<String>(
-                    placeholder: const Text('Select role'),
-                    initialValue: _selectedRole,
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _selectedRole = value);
-                      }
-                    },
-                    selectedOptionBuilder: (context, value) => Text(
-                      value == 'user' ? 'User' :
-                      value == 'assistant' ? 'Assistant' : value,
-                    ),
-                    options: const [
-                      ShadOption(value: 'user', child: Text('User')),
-                      ShadOption(value: 'assistant', child: Text('Assistant')),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-
-              // Thinking editor (only for assistant messages)
-              if (_selectedRole == 'assistant') ...[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Thinking (optional)',
-                      style: theme.textTheme.small,
-                    ),
-                    const SizedBox(height: 4),
-                    ShadInput(
-                      controller: _thinkingController,
-                      placeholder: const Text('Optional thinking/reasoning trace...'),
-                      minLines: 2,
-                      maxLines: null,
-                    ),
-                  ],
                 ),
-                const SizedBox(height: 6),
-              ],
-
-              // Content editor
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Content',
-                    style: theme.textTheme.small,
-                  ),
-                  const SizedBox(height: 4),
-                  ShadInput(
-                    controller: _contentController,
-                    minLines: 2,
+                child: Focus(
+                  onKeyEvent: _handleKeyEvent,
+                  child: TextField(
+                    controller: _thinkingController,
+                    focusNode: _thinkingFocusNode,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                      color: theme.colorScheme.mutedForeground,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
                     maxLines: null,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-
-              // AI Suggestion button (only for assistant messages)
-              if (_selectedRole == 'assistant') ...[
-                ShadButton(
-                  onPressed: _isLoadingSuggestion ? null : _getSuggestion,
-                  enabled: !_isLoadingSuggestion,
-                  size: ShadButtonSize.sm,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_isLoadingSuggestion)
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      else
-                        const Icon(LucideIcons.lightbulb, size: 16),
-                      const SizedBox(width: 6),
-                      Text(_isLoadingSuggestion ? 'Getting suggestion...' : 'Get AI Suggestion'),
-                    ],
+                    keyboardType: TextInputType.multiline,
                   ),
                 ),
-                const SizedBox(height: 6),
-              ],
-
-              // Error message
-              if (_errorMessage != null) ...[
-                ShadAlert.destructive(
-                  title: const Text('Error'),
-                  description: Text(_errorMessage!),
-                ),
-                const SizedBox(height: 6),
-              ],
-
-              // Save/Cancel buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ShadButton.outline(
-                    onPressed: _cancelEdit,
-                    size: ShadButtonSize.sm,
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 6),
-                  ShadButton(
-                    onPressed: _saveChanges,
-                    size: ShadButtonSize.sm,
-                    child: const Text('Save'),
-                  ),
-                ],
               ),
+              const SizedBox(height: 8),
             ] else ...[
-              // Display mode
-              // Thinking section (collapsible, only for assistant messages with thinking)
-              if (widget.message.role == 'assistant' && widget.message.thinking != null && widget.message.thinking!.isNotEmpty) ...[
-                GestureDetector(
-                  onTap: () => setState(() => _isThinkingExpanded = !_isThinkingExpanded),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _isThinkingExpanded ? LucideIcons.chevronDown : LucideIcons.chevronRight,
-                        size: 14,
-                        color: theme.colorScheme.mutedForeground,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _isThinkingExpanded ? 'Hide thinking' : 'Show thinking',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: theme.colorScheme.mutedForeground,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (_isThinkingExpanded) ...[
-                  const SizedBox(height: 6),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.only(left: 8, top: 6, bottom: 6),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(
-                          color: theme.colorScheme.mutedForeground.withOpacity(0.3),
-                          width: 2,
-                        ),
+              // Placeholder for adding thinking
+              GestureDetector(
+                onTap: () {
+                  _thinkingFocusNode.requestFocus();
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(left: 10, top: 6, bottom: 6),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      left: BorderSide(
+                        color: theme.colorScheme.mutedForeground.withValues(alpha: 0.15),
+                        width: 2,
                       ),
                     ),
-                    child: SelectableText(
-                      widget.message.thinking!,
+                  ),
+                  child: Focus(
+                    onKeyEvent: _handleKeyEvent,
+                    child: TextField(
+                      controller: _thinkingController,
+                      focusNode: _thinkingFocusNode,
                       style: TextStyle(
                         fontSize: 13,
                         fontStyle: FontStyle.italic,
                         color: theme.colorScheme.mutedForeground,
                       ),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        hintText: 'Add thinking process here...',
+                        hintStyle: TextStyle(
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                          color: theme.colorScheme.mutedForeground.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      maxLines: null,
+                      keyboardType: TextInputType.multiline,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ],
+
+          // Main content - directly editable
+          Focus(
+            onKeyEvent: _handleKeyEvent,
+            child: TextField(
+              controller: _contentController,
+              focusNode: _contentFocusNode,
+              style: theme.textTheme.p,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+                hintText: 'Enter message...',
+                hintStyle: TextStyle(
+                  color: theme.colorScheme.mutedForeground.withValues(alpha: 0.5),
+                ),
+              ),
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+            ),
+          ),
+
+          // Error message
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 8),
+            ShadAlert.destructive(
+              title: const Text('Error'),
+              description: Text(_errorMessage!),
+            ),
+          ],
+
+          // AI Suggestion button (only for assistant messages, shown subtly)
+          if (isAssistant) ...[
+            const SizedBox(height: 8),
+            ShadButton.ghost(
+              onPressed: _isLoadingSuggestion ? null : _getSuggestion,
+              size: ShadButtonSize.sm,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_isLoadingSuggestion)
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    )
+                  else
+                    Icon(LucideIcons.sparkles, size: 14, color: theme.colorScheme.mutedForeground),
+                  const SizedBox(width: 4),
+                  Text(
+                    _isLoadingSuggestion ? 'Getting suggestion...' : 'Get suggestion',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.mutedForeground,
                     ),
                   ),
                 ],
-                const SizedBox(height: 6),
-              ],
-              SelectableText(
-                widget.message.content,
-                style: theme.textTheme.p,
               ),
+            ),
           ],
         ],
       ),
