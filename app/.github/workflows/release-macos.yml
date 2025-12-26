@@ -1,0 +1,81 @@
+name: Release macOS
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: false
+        default: ''
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build macOS release
+        run: flutter build macos --release
+
+      - name: Create DMG
+        run: |
+          APP_NAME="app"
+          APP_PATH="build/macos/Build/Products/Release/${APP_NAME}.app"
+          DMG_NAME="${APP_NAME}-macos"
+
+          # Determine version
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+          else
+            VERSION="dev"
+          fi
+
+          DMG_FILENAME="${DMG_NAME}-${VERSION}.dmg"
+
+          # Create a temporary directory for DMG contents
+          mkdir -p dmg_contents
+          cp -R "${APP_PATH}" dmg_contents/
+
+          # Create Applications symlink
+          ln -s /Applications dmg_contents/Applications
+
+          # Create DMG
+          hdiutil create -volname "${APP_NAME}" \
+            -srcfolder dmg_contents \
+            -ov -format UDZO \
+            "${DMG_FILENAME}"
+
+          echo "DMG_FILENAME=${DMG_FILENAME}" >> $GITHUB_ENV
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: ${{ env.DMG_FILENAME }}
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.DMG_FILENAME }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
